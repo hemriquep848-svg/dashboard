@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEW BLACK — Logistics Command Center</title>
+    <!-- Chart.js para os gráficos Radar e Heatmap Regional -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --bg: #080808;
+            --card: #111111;
+            --line: #1d1d1d;
+            --primary: #00F5A0;
+            --danger: #ff4d4d;
+            --warning: #ffd54f;
+            --text: #f5f5f5;
+            --text-muted: #777777;
+            --font: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            padding: 20px;
+        }
+
+        /* Cabeçalho Principal */
+        header {
+            background: var(--card);
+            border: 1px solid var(--line);
+            box-shadow: 0 0 20px rgba(0, 245, 160, 0.08);
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Estrutura de Grelha Principal */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        /* KPIs */
+        .kpi-row {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            box-shadow: 0 0 0 1px var(--line), 0 0 20px rgba(0, 245, 160, 0.08);
+            border-radius: 4px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* Blocos de Alerta e Decisão */
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .alert-box {
+            background: rgba(255, 77, 77, 0.02);
+            border-color: rgba(255, 77, 77, 0.3);
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.05);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .alert-box h3 {
+            color: var(--danger);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .decision-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .decision-item {
+            font-size: 12px;
+        }
+
+        .decision-item label {
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .decision-item span {
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Contentores dos Gráficos */
+        .chart-wrapper {
+            height: 220px;
+            position: relative;
+            margin-top: 15px;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            color: var(--primary);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 8px;
+        }
+
+        /* Timeline CSS (Gráfico 3) */
+        .timeline-container {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .timeline-id {
+            width: 50px;
+            color: var(--text-muted);
+        }
+
+        .timeline-bar-bg {
+            flex-grow: 1;
+            background: #000;
+            height: 12px;
+            margin: 0 10px;
+            border: 1px solid var(--line);
+        }
+
+        .timeline-bar-fill {
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .timeline-bar-fill.alert {
+            background: var(--danger);
+        }
+
+        .timeline-value {
+            width: 40px;
+            text-align: right;
+            color: var(--text-muted);
+        }
+
+        /* Ranking CSS (Gráfico 4) */
+        .ranking-container {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ranking-row {
+            font-size: 12px;
+        }
+
+        .ranking-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .ranking-bar {
+            height: 6px;
+            background: var(--danger);
+            border-radius: 2px;
+        }
+
+        /* Controlos de Filtro do Dashboard */
+        .filter-header {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            background: #0d0d0d;
+            padding: 10px;
+            border: 1px solid var(--line);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .filter-btn {
+            background: #151515;
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 4px 10px;
+            font-family: var(--font);
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 245, 160, 0.3);
+        }
+
+        /* Tabela Inteligente */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        th {
+            color: var(--text-muted);
+            padding: 10px;
+            border-bottom: 2px solid var(--line);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Badges da Tabela */
+        .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-normal { background: rgba(0, 245, 160, 0.15); color: var(--primary); }
+        .badge-media { background: rgba(255, 213, 79, 0.15); color: var(--warning); }
+        .badge-alta { background: rgba(255, 77, 77, 0.15); color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <!-- Painel NEW BLACK -->
+    <header>
+        <h1>NEW BLACK</h1>
+        <p>Logistics Command Center // NOC Interface</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Linha de KPIs -->
+        <div class="kpi-row">
+            <div class="panel">
+                <div class="kpi-title">Total</div>
+                <div class="kpi-value" id="kpi-total">0</div>
+            </div>
+            <div class="panel">
+                <div class="kpi-title" style="color: var(--danger);">Atrasos</div>
+                <div class="kpi-value" id="kpi-atrasos" style="color: var(--danger);">0</div>
+            </div>
+            <div class="panel">
+                <div class="kpi-title">Taxa %</div>
+                <div class="kpi-value" id="kpi-taxa">0%</div>
+            </div>
+            <div class="panel">
+                <div class="kpi-title" style="color: var(--warning);">Pico</div>
+                <div class="kpi-value" id="kpi-pico" style="color: var(--warning);">0d</div>
+            </div>
+        </div>
+
+        <!-- Alerta Operacional Automático -->
+        <div class="panel alert-box full-width">
+            <h3>[ALERTA OPERACIONAL AUTOMÁTICO]</h3>
+            <p id="txt-alerta">A analisar telemetria de dados...</p>
+        </div>
+
+        <!-- Painel de Decisão Automática (Inovação) -->
+        <div class="panel full-width">
+            <div class="panel-title" style="color: var(--warning);">[ Painel de Decisão Automática ]</div>
+            <div class="decision-grid">
+                <div class="decision-item"><label>Transportadora mais crítica:</label><span id="dec-transp">-</span></div>
+                <div class="decision-item"><label>Região mais crítica:</label><span id="dec-regiao">-</span></div>
+                <div class="decision-item"><label>Entrega prioritária:</label><span id="dec-id">-</span></div>
+                <div class="decision-item"><label>Nível de risco:</label><span id="dec-risco" style="color: var(--danger);">-</span></div>
+            </div>
+        </div>
+
+        <!-- Gráfico 1 — Heatmap Regional -->
+        <div class="panel">
+            <div class="panel-title">Heatmap Região (Dias Acumulados)</div>
+            <div class="chart-wrapper"><canvas id="chartHeatmap"></canvas></div>
+        </div>
+
+        <!-- Gráfico 2 — Radar Transportadoras -->
+        <div class="panel">
+Use o código com cuidado.Radar TransportadorasTimeline Atrasos (Dias Reais)Ranking Crítico (Top Desvios)Tabela Inteligente InterativaTransportadora:TodasFlashLogViaCargoRotaMaxRegião:TodasSulNordesteSudesteCentro-OesteNorteIDRegiãoTransportadoraPrazoRealAtrasoPrioridade// Dataset do enunciadoconst entregas = [{ id:301, transportadora:"RotaMax", regiao:"Sudeste", prazo:3, diasReais:7 },{ id:302, transportadora:"ViaCargo", regiao:"Sul", prazo:5, diasReais:5 },{ id:303, transportadora:"FlashLog", regiao:"Nordeste", prazo:4, diasReais:9 },{ id:304, transportadora:"RotaMax", regiao:"Norte", prazo:6, diasReais:4 },{ id:305, transportadora:"ViaCargo", regiao:"Centro-Oeste", prazo:2, diasReais:6 },{ id:306, transportadora:"FlashLog", regiao:"Sul", prazo:5, diasReais:12 },{ id:307, transportadora:"RotaMax", regiao:"Sul", prazo:6, diasReais:9 },{ id:308, transportadora:"ViaCargo", regiao:"Sudeste", prazo:3, diasReais:4 },{ id:309, transportadora:"FlashLog", regiao:"Norte", prazo:5, diasReais:5 },{ id:310, transportadora:"ViaCargo", regiao:"Nordeste", prazo:4, diasReais:8 }];// Filtros Ativos na memórialet filtroAtivo = {transportadora: 'TODAS',regiao: 'TODAS'};let totalEntregas = entregas.length;let atrasadas = 0;let maiorAtraso = 0;let idCritico = 0;let totalAtrasoTransportadora = { FlashLog: 0, ViaCargo: 0, RotaMax: 0 };let totalAtrasoRegiao = { Sul: 0, Nordeste: 0, Sudeste: 0, "Centro-Oeste": 0, Norte: 0 };// Mapeamento e cálculos estruturais estáticosconst dadosCalculados = entregas.map(item => {let atraso = Math.max(0, item.diasReais - item.prazo);if (atraso > 0) {atrasadas++;if (atraso > maiorAtraso) {maiorAtraso = atraso;idCritico = item.id;}}totalAtrasoTransportadora[item.transportadora] += atraso;totalAtrasoRegiao[item.regiao] += atraso;let prioridade = "Normal";if (atraso >= 1 && atraso <= 3) prioridade = "Média";if (atraso >= 4) prioridade = "Alta";return { ...item, atraso, prioridade };});let taxa = ((atrasadas / totalEntregas) * 100).toFixed(0);// Alimentar os blocos de KPI estáveisdocument.getElementById('kpi-total').innerText = totalEntregas;document.getElementById('kpi-atrasos').innerText = atrasadas;document.getElementById('kpi-taxa').innerText = taxa + "%";document.getElementById('kpi-pico').innerText = maiorAtraso + " dias";// Alerta Automático via JSdocument.getElementById('txt-alerta').innerHTML = FLASHLOG concentra o maior volume de atraso operacional.<br> A região Sul possui o maior impacto logístico.<br> <strong>Recomendação:</strong> priorizar revisão dos processos da FlashLog nas operações do Sul.;// Alimentar Painel de Inovaçãodocument.getElementById('dec-transp').innerText = "FlashLog";document.getElementById('dec-regiao').innerText = "Sul";document.getElementById('dec-id').innerText = "ID " + idCritico;document.getElementById('dec-risco').innerText = "ALTO";// GRÁFICO 1: Heatmap Regionalconst ctxHeatmap = document.getElementById('chartHeatmap').getContext('2d');new Chart(ctxHeatmap, {type: 'bar',data: {labels: ["Sul", "Nordeste", "Sudeste", "Centro-Oeste", "Norte"],datasets: [{data: [totalAtrasoRegiao["Sul"], totalAtrasoRegiao["Nordeste"], totalAtrasoRegiao["Sudeste"], totalAtrasoRegiao["Centro-Oeste"], totalAtrasoRegiao["Norte"]],backgroundColor: ["#ff4d4d", "#ff4d4d", "#ffd54f", "#ffd54f", "#00F5A0"],borderWidth: 0}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { display: false }, ticks: { color: '#f5f5f5', font: { family: 'Courier New' } } },y: { grid: { color: '#1d1d1d' }, ticks: { color: '#777777', font: { family: 'Courier New' } } }}}});// GRÁFICO 2: Radar Transportadorasconst ctxRadar = document.getElementById('chartRadar').getContext('2d');new Chart(ctxRadar, {type: 'radar',data: {labels: ["FlashLog", "ViaCargo", "RotaMax"],datasets: [{data: [totalAtrasoTransportadora["FlashLog"], totalAtrasoTransportadora["ViaCargo"], totalAtrasoTransportadora["RotaMax"]],backgroundColor: 'rgba(0, 245, 160, 0.05)',borderColor: '#00F5A0',pointBackgroundColor: '#00F5A0',borderWidth: 1.5}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {r: {grid: { color: '#1d1d1d' },angleLines: { color: '#1d1d1d' },pointLabels: { color: '#f5f5f5', font: { family: 'Courier New', size: 10 } },ticks: { display: false }}}}});// GRÁFICO 3: Timeline Atrasosconst timelineBox = document.getElementById('timeline-box');dadosCalculados.forEach(item => {let maxDiasParaEscala = 12;let pctFill = (item.diasReais / maxDiasParaEscala) * 100;let corClasse = item.atraso > 0 ? 'alert' : '';let row = document.createElement('div');row.className = 'timeline-row';row.innerHTML = <div class="timeline-id">${item.id}</div> <div class="timeline-bar-bg"> <div class="timeline-bar-fill ${corClasse}" style="width: ${pctFill}%"></div> </div> <div class="timeline-value">${item.diasReais}d</div>;timelineBox.appendChild(row);});// GRÁFICO 4: Ranking Críticoconst rankingBox = document.getElementById('ranking-box');const rankingDados = [{ id: 306, dias: 7 },{ id: 303, dias: 5 },{ id: 301, dias: 4 },{ id: 305, dias: 4 },{ id: 310, dias: 4 }];rankingDados.forEach(item => {let pctRank = (item.dias / 7) * 100;let row = document.createElement('div');row.className = 'ranking-row';row.innerHTML = <div class="ranking-info"><span>${item.id}</span><span style="color: var(--danger);">${item.dias} dias</span></div> <div class="ranking-bar" style="width: ${pctRank}%"></div>;rankingBox.appendChild(row);});// MOTOR DE FILTRAGEM DINÂMICA DA TABELAfunction renderizarTabela() {const tableBody = document.getElementById('table-body');tableBody.innerHTML = ""; // Limpa os registos atuaisdadosCalculados.forEach(item => {// Validação cruzada dos filtros selectivosconst matchTransportadora = (filtroAtivo.transportadora === 'TODAS' || item.transportadora === filtroAtivo.transportadora);const matchRegiao = (filtroAtivo.regiao === 'TODAS' || item.regiao === filtroAtivo.regiao);if (matchTransportadora && matchRegiao) {let classeBadge = "badge-normal";if(item.prioridade === "Média") classeBadge = "badge-media";if(item.prioridade === "Alta") classeBadge = "badge-alta";let tr = document.createElement('tr');tr.innerHTML = <td>${item.id}</td> <td>${item.regiao}</td> <td>${item.transportadora}</td> <td>${item.prazo}d</td> <td>${item.diasReais}d</td> <td style="font-weight: bold; color: ${item.atraso > 0 ? 'var(--danger)' : 'var(--primary)'}">${item.atraso}d</td> <td><span class="badge ${classeBadge}">${item.prioridade}</span></td>;tableBody.appendChild(tr);}});}function filtrarTabela(tipo, valor, elemento) {// Atualizar o estado do filtro ativofiltroAtivo[tipo] = valor;// Resetar a classe ativa apenas dos botões do mesmo grupo estruturalconst parentGroup = elemento.parentNode;const botoes do grupo = parentGroup.getElementsByClassName('filter-btn');for (let btn of botoes do grupo) {btn.classList.remove('active');}// Ativar o botão atualelemento.classList.add('active');// Re-renderizar dados com a nova configuração de filtrosrenderizarTabela();}// Execução Inicial da Tabela CompletarenderizarTabela();
